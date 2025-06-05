@@ -84,10 +84,32 @@ document.addEventListener("DOMContentLoaded", function () {
     };
     closeHighscoreModal.onclick = function() {
       highscoreModal.classList.remove("active");
+        // Show the reset button if it exists
+      const resetBtn = document.getElementById("reset-scores-btn");
+      if (resetBtn) resetBtn.style.display = "block";
     };
     window.addEventListener("click", function(event) {
       if (event.target === highscoreModal) highscoreModal.classList.remove("active");
     });
+    
+    // Add reset logic
+    const resetBtn = document.getElementById("reset-scores-btn");
+    if (resetBtn) {
+      resetBtn.onclick = function() {
+        if (confirm("Are you sure you want to reset all group scores?")) {
+          localStorage.removeItem("groupScores");
+          modalLeaderboardList.innerHTML = "<li>No scores yet.</li>";
+          resetBtn.style.display = "none";
+          // Also update the leaderboard on the result screen if visible
+          const leaderboard = document.getElementById("leaderboard");
+          const list = document.getElementById("leaderboard-list");
+          if (leaderboard && list) {
+            leaderboard.style.display = "none";
+            list.innerHTML = "";
+          }
+        }
+      };
+    }
   }
 
   // Only keep your actual quiz questions for Single Bulb and RGB Bulb
