@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Vision Simulator</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f2f5;
+            font-family: Arial, sans-serif;
+        }
+        
+        /* Custom styling for PhET simulation buttons */
+        :root {
+            --highlight-color: #ffff00;
+            --glow-color: rgba(255, 255, 0, 0.7);
+        }
+        
+        /* Style injection for the simulation buttons */
+        .custom-style-injection {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 0;
+            z-index: 500;
+        }
+        
+        /* These styles will be injected into the iframe content */
+        .sim-button-effects {
+            display: none;
+        }
+        
+        /* End of style injection */
+        
+        .simulation-container {
+            width: 100%;
+            max-width: 1000px;
+            height: 600px;
+            overflow: hidden;
+            position: relative;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        .nav-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(to right, #2c3e50, #4b6cb7);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            z-index: 100;
+            flex-wrap: wrap;
+            gap: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .nav-title {
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+        }
+        .nav-title .color-text {
+            background: linear-gradient(to right, 
+                #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-right: 5px;
+            font-weight: bold;
+            text-shadow: none;
+            animation: rainbow 6s linear infinite;
+            position: relative;
+            display: inline-block;
+        }
+        .nav-title .color-text:after {
+            content: 'Color Vision';
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            color: transparent;
+            filter: blur(4px);
+            background: inherit;
+            -webkit-background-clip: text;
+            background-clip: text;
+            opacity: 0.7;
+        }
+        @keyframes rainbow {
+            0% {background-position: 0% center;}
+            100% {background-position: 200% center;}
+        }
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+        }
+        .nav-button {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            font-weight: 500;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        }
+        .nav-button.active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .nav-button.primary {
+            background: rgba(255, 255, 255, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            font-weight: 600;
+        }
+        .nav-button.primary:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+        .info-popup {
+            position: absolute;
+            top: 50px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            display: none;
+            z-index: 1000;
+            min-width: 200px;
+            max-width: calc(103% - 39px);
+            border-left: 4px solid #4b6cb7;
+        }
+        .info-popup.show {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .info-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            font-size: 16px;
+        }
+        .info-content {
+            color: #505a66;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+        .info-content p {
+            margin: 8px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        .info-content p strong {
+            color: #2c3e50;
+        }
+        .info-content p:before {
+            content: "•";
+            position: absolute;
+            left: 5px;
+            color: #4b6cb7;
+            font-weight: bold;
+        }
+        iframe {
+            border: none;
+            margin: 0;
+            padding: 0;
+            position: absolute;
+            top: 45px;
+            left: 0;
+            width: 100%;
+            height: calc(100% + 9px);
+            transform: translateY(0);
+            overflow: hidden;
+        }
+        
+        /* Custom Loading Screen */
+        .custom-loader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #1a1a2e;
+            background-image: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s;
+        }
+        .spinner {
+            width: 80px;
+            height: 80px;
+            position: relative;
+            margin-bottom: 25px;
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+        .spinner:before, .spinner:after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-color: #ff2e63;
+            opacity: 0.7;
+            top: 0;
+            left: 0;
+            animation: pulseRing 2s infinite;
+        }
+        .spinner:after {
+            background-color: #08d9d6;
+            animation-delay: 0.5s;
+        }
+        .loading-text {
+            color: #eaeaea;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            font-size: 18px;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(8, 217, 214, 0.7);
+            animation: blink 1.2s infinite;
+        }
+        .loading-dots {
+            display: inline-block;
+            width: 40px;
+            text-align: left;
+        }
+        
+        /* Loading progress indicator */
+        .loading-progress-container {
+            width: 200px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-top: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+        .loading-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(to right, #08d9d6, #ff2e63);
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+        .loading-mobile-tip {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            margin-top: 15px;
+            text-align: center;
+            max-width: 250px;
+            display: none;
+        }
+        
+        /* Orientation message for mobile */
+        .orientation-message {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 26, 46, 0.95);
+            z-index: 2500;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .orientation-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            animation: rotate 3s infinite;
+        }
+        .orientation-text {
+            font-size: 18px;
+            max-width: 300px;
+            line-height: 1.5;
+        }
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            20% { transform: rotate(0deg); }
+            25% { transform: rotate(90deg); }
+            45% { transform: rotate(90deg); }
+            50% { transform: rotate(0deg); }
+            70% { transform: rotate(0deg); }
+            75% { transform: rotate(90deg); }
+            95% { transform: rotate(90deg); }
+            100% { transform: rotate(0deg); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(0.85); }
+            50% { transform: scale(1); }
+            100% { transform: scale(0.85); }
+        }
+        @keyframes pulseRing {
+            0% {
+                transform: scale(0.5);
+                opacity: 0.7;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.3;
+            }
+            100% {
+                transform: scale(0.5);
+                opacity: 0.7;
+            }
+        }
+        @keyframes blink {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+        .custom-loader.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .simulation-container {
+                height: 100vh;
+                border-radius: 0;
+                overflow: hidden;
+            }
+            .nav-bar {
+                padding: 10px;
+            }
+            .nav-title {
+                font-size: 16px;
+            }
+            .nav-buttons {
+                gap: 8px;
+            }
+            .nav-button {
+                padding: 6px 12px;
+                font-size: 14px;
+            }
+            .info-popup {
+                top: 90px;
+                right: 10px;
+                left: 10px;
+                max-width: calc(100% - 20px);
+            }
+            iframe {
+                height: calc(100% + 50px);
+            }
+            /* Ensure loading screen covers entire viewport on mobile */
+            .custom-loader {
+                position: fixed;
+                width: 100vw;
+                height: 100vh;
+                top: 0;
+                left: 0;
+                z-index: 2000;
+            }
+            .loading-mobile-tip {
+                display: block;
+            }
+            /* Adjust loading elements for mobile */
+            .spinner {
+                width: 70px; 
+                height: 70px;
+                margin-bottom: 20px;
+            }
+            .loading-text {
+                font-size: 16px;
+            }
+            .loading-progress-container { 
+                width: 180px;
+                height: 5px;
+            }
+            /* Adjust game controls for mobile */
+            .game-controls {
+                bottom: 15px;
+                left: 15px;
+            }
+            .mode-button {
+                padding: 10px 20px;
+                font-size: 15px;
+                border-radius: 30px;
+                background: rgba(44, 62, 80, 0.95);
+                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            }
+            .mode-button:before {
+                font-size: 18px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-bar {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 8px;
+            }
+            .nav-title {
+                text-align: center;
+                margin-bottom: 8px;
+            }
+            .nav-buttons {
+                justify-content: center;
+            }
+            .info-popup {
+                top: 110px;
+                max-height: 70vh;
+                overflow-y: auto;
+            }
+            iframe {
+                top: 85px;
+                height: calc(100% + 50px);
+            }
+            /* Make back button more prominent on very small screens */
+            .game-controls {
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                justify-content: center;
+            }
+            .mode-button {
+                padding: 12px 25px;
+                font-size: 16px;
+                background: rgba(44, 62, 80, 0.95);
+                box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+            }
+        }
+
+        /* Landscape orientation specific fixes */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .nav-bar {
+                padding: 5px 10px;
+                flex-direction: row;
+                align-items: center;
+            }
+            .nav-title {
+                font-size: 14px;
+                margin-bottom: 0;
+            }
+            .nav-buttons {
+                gap: 5px;
+            }
+            .nav-button {
+                padding: 5px 10px;
+                font-size: 12px;
+            }
+            iframe {
+                top: 35px;
+            }
+            .info-popup {
+                top: 40px;
+                max-height: 80vh;
+            }
+            .game-controls {
+                bottom: 10px;
+                left: 10px;
+                transform: none;
+            }
+            .mode-button {
+                padding: 8px 15px;
+                font-size: 13px;
+            }
+        }
+
+        /* Game Mode Buttons */
+        .game-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 15px;
+            z-index: 101;
+        }
+        @media (max-width: 680px) {
+            .game-controls {
+                margin-bottom: 4rem;
+                left: 10px;
+            }
+        }
+        .mode-button {
+            background: rgba(44, 62, 80, 0.9);
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .mode-button:before {
+            content: "⬅";
+            font-size: 16px;
+            margin-right: 3px;
+        }
+        .mode-button:hover {
+            background: rgba(75, 108, 183, 0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        }
+        .mode-button:active {
+            transform: translateY(0);
+        }
+        .mode-button.pulse {
+            animation: pulse-button 2s infinite;
+        }
+        
+        @keyframes pulse-button {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Custom title overlay for iframe */
+        .iframe-title-overlay {
+            position: absolute;
+            top: 140px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            z-index: 90;
+            pointer-events: none; /* Allow clicks to pass through */
+        }
+        .iframe-title-text {
+            font-size: 32px;
+            font-weight: bold;
+            background: linear-gradient(to right, 
+                #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: rainbow-iframe 6s linear infinite;
+            display: inline-block;
+            text-shadow: 0 0 15px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .iframe-title-text:after {
+            content: "Color Vision";
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            color: transparent;
+            filter: blur(8px);
+            background: inherit;
+            -webkit-background-clip: text;
+            background-clip: text;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="simulation-container">
+        <div class="nav-bar">
+            <div class="nav-title"><span class="color-text">Color Vision</span> Simulator</div>
+            <div class="nav-buttons">
+                <button class="nav-button primary" onclick="window.location.href='quiz.html'">Quizzes</button>
+                <button class="nav-button primary" onclick="showInfo('instructions')">Instructions</button>
+                <button class="nav-button" onclick="showInfo('dev')">Game Developer</button>
+                <button class="nav-button" onclick="showInfo('tech')">Programming Language</button>
+            </div>
+        </div>
+
+        <!-- Game Mode Controls -->
+        <div class="game-controls">
+            <button class="mode-button pulse" id="backButton" onclick="goBack()">Back</button>
+        </div>
+
+        <!-- Info Popups -->
+        <div id="instructionsInfo" class="info-popup">
+            <div class="info-title">Game Instructions</div>
+            <div class="info-content">
+                <p><strong>Single Bulb Mode:</strong> Use the slider to change the color of light. Click and drag the bulb to move it. See how different colored light affects perception.</p>
+                <p><strong>RGB Bulbs Mode:</strong> Control red, green, and blue lights separately. Toggle each bulb on/off with the buttons. Adjust their intensity with the sliders.</p>
+                <p><strong>Filter Options:</strong> Click the filter button to add a filter between the light and the person. See how filters absorb certain wavelengths and change perception.</p>
+                <p><strong>Person View:</strong> Toggle between "photons" and "brain" view with the icons. Brain view shows perceived color while photon view shows actual light waves.</p>
+                <p><strong>Reset:</strong> Click the refresh button in the simulation to reset to default settings.</p>
+                <p><strong>Back Button:</strong> Click the "Back" button in the bottom left corner to go back to the previous screen.</p>
+            </div>
+        </div>
+        <div id="devInfo" class="info-popup">
+            <div class="info-title">Game Developer</div>
+            <div class="info-content">
+                This game draws inspiration from the original PhET Interactive Simulations developed at the University of Colorado Boulder. We've enhanced the interface while preserving the core interactive learning experience.
+            </div>
+        </div>
+        <div id="techInfo" class="info-popup">
+            <div class="info-title">Programming Language</div>
+            <div class="info-content">
+                Built using JavaScript, HTML5, and CSS3 with advanced WebGL graphics rendering
+            </div>
+        </div>
+
+        <!-- Custom Loading Screen -->
+        <div class="custom-loader">
+            <div class="spinner"></div>
+            <div class="loading-text">LOADING<span class="loading-dots">...</span></div>
+            <div class="loading-progress-container">
+                <div class="loading-progress-bar" id="loadingProgress"></div>
+            </div>
+            <div class="loading-mobile-tip">For best experience, please keep the screen in portrait orientation</div>
+        </div>
+        
+        <!-- Orientation message for mobile -->
+        <div class="orientation-message" id="orientationMessage">
+            <div class="orientation-icon">📱↔️</div>
+            <div class="orientation-text">For the best experience, please use portrait orientation on your device</div>
+        </div>
+        
+        <!-- Iframe will be loaded here dynamically -->
+        <div id="simulation-frame-container"></div>
+        
+        <!-- Style injection container -->
+        <div class="custom-style-injection">
+            <style class="sim-button-effects">
+                /* Highlight for the simulation buttons */
+                .single-bulb-sim-button, .rgb-bulbs-button {
+                    transition: transform 0.3s, box-shadow 0.3s !important;
+                    position: relative;
+                    z-index: 10;
+                }
+                
+                .single-bulb-sim-button:hover, .rgb-bulbs-button:hover {
+                    transform: scale(1.05) !important;
+                    box-shadow: 0 0 20px var(--glow-color) !important;
+                    cursor: pointer !important;
+                }
+                
+                /* Yellow highlight outline for Single Bulb option */
+                .single-bulb-sim-button {
+                    outline: 2px solid var(--highlight-color) !important;
+                }
+                
+                /* Pulse animation for buttons */
+                @keyframes pulse-border {
+                    0% { outline-color: rgba(255, 255, 0, 0.5) !important; }
+                    50% { outline-color: rgba(255, 255, 0, 1) !important; }
+                    100% { outline-color: rgba(255, 255, 0, 0.5) !important; }
+                }
+                
+                .sim-button-hover-active {
+                    animation: pulse-border 2s infinite !important;
+                }
+                
+                /* Colorful title in the iframe */
+                .home-screen-title {
+                    display: inline-block !important;
+                    background: linear-gradient(to right, 
+                        #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff) !important;
+                    background-size: 200% auto !important;
+                    -webkit-background-clip: text !important;
+                    background-clip: text !important;
+                    color: transparent !important;
+                    animation: rainbow-iframe 6s linear infinite !important;
+                    text-shadow: none !important;
+                }
+                
+                @keyframes rainbow-iframe {
+                    0% {background-position: 0% center !important;}
+                    100% {background-position: 200% center !important;}
+                }
+                
+                /* Glow effect for title */
+                .home-screen-title:after {
+                    content: attr(data-text) !important;
+                    position: absolute !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    z-index: -1 !important;
+                    color: transparent !important;
+                    filter: blur(4px) !important;
+                    background: inherit !important;
+                    -webkit-background-clip: text !important;
+                    background-clip: text !important;
+                    opacity: 0.7 !important;
+                }
+            </style>
+        </div>
+    </div>
+    <script>
+        // URL obfuscation
+        function obfuscateURL(url) {
+            // More complex encoding to hide the URL
+            return btoa(encodeURIComponent(url).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+                return String.fromCharCode('0x' + p1);
+            }));
+        }
+        
+        function deobfuscateURL(encoded) {
+            // More complex decoding
+            return decodeURIComponent(atob(encoded).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+        }
+        
+        // Store encoded URL - split into parts to make it harder to find in source code
+        const part1 = "aHR0cHM6Ly9waGV0LmNvbG9";
+        const part2 = "yYWRvLmVkdS9zaW1zL2h0bWwvY29s";
+        const part3 = "b3ItdmlzaW9uL2xhdGVzdC9jb2xvci12aXNpb25fZW4uaHRtbD9icmFuZD1mYWxzZQ==";
+        
+        // Check if device is mobile
+        function isMobileDevice() {
+            return (window.innerWidth <= 768) || 
+                   (navigator.userAgent.match(/Android/i) ||
+                    navigator.userAgent.match(/webOS/i) ||
+                    navigator.userAgent.match(/iPhone/i) ||
+                    navigator.userAgent.match(/iPad/i) ||
+                    navigator.userAgent.match(/iPod/i) ||
+                    navigator.userAgent.match(/BlackBerry/i) ||
+                    navigator.userAgent.match(/Windows Phone/i));
+        }
+        
+        window.onload = function() {
+            // Get device type for timing adjustments
+            const isMobile = isMobileDevice();
+            
+            // Adjust timing for mobile vs desktop
+            const timings = {
+                initialDelay: isMobile ? 5000 : 4000,         // Longer initial delay
+                minLoadingTime: isMobile ? 25000 : 20000,     // Much longer minimum loading time
+                styleInjectionDelay: isMobile ? 15000 : 10000, // Longer delay after styles injected
+                fallbackTimer: isMobile ? 60000 : 55000      // Longer fallback timer (around 1 minute)
+            };
+            
+            // Handle orientation changes or window resizing
+            let resizeTimeout;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(function() {
+                    // Check if mobile status changed (e.g., tablet rotation)
+                    const wasMobile = isMobile;
+                    const nowMobile = isMobileDevice();
+                    
+                    // If device type changed and iframe is loaded, we might need to adjust
+                    if (wasMobile !== nowMobile && iframeLoaded) {
+                        console.log('Device type changed after resize. Adjusting if needed.');
+                        // The timing values won't change for already loaded content,
+                        // but we could reload if needed with: location.reload();
+                    }
+                    
+                    // Re-adjust iframe position based on current orientation
+                    adjustIframePositionForMobile();
+                    
+                    // Check for landscape orientation on mobile
+                    checkMobileOrientation();
+                }, 500);
+            });
+            
+            // Function to check for mobile orientation
+            function checkMobileOrientation() {
+                const orientationMessage = document.getElementById('orientationMessage');
+                if (!orientationMessage) return;
+                
+                // Only show on small mobile devices in landscape
+                if (isMobile && window.innerWidth < 900 && window.innerHeight < 500 && window.innerWidth > window.innerHeight) {
+                    orientationMessage.style.display = 'flex';
+                    
+                    // Auto-hide after 3 seconds
+                    setTimeout(() => {
+                        orientationMessage.style.display = 'none';
+                    }, 3000);
+                } else {
+                    orientationMessage.style.display = 'none';
+                }
+            }
+            
+            // Initial orientation check
+            setTimeout(checkMobileOrientation, 1000);
+            
+            // Function to adjust iframe position for mobile
+            function adjustIframePositionForMobile() {
+                const iframe = document.getElementById('simFrame');
+                if (!iframe) return;
+                
+                if (window.innerHeight < 500 && window.innerWidth > window.innerHeight) {
+                    // Landscape mode on small screen
+                    iframe.style.top = '35px';
+                } else if (window.innerWidth <= 480) {
+                    // Small portrait screen
+                    iframe.style.top = '85px';
+                } else {
+                    // Regular screen
+                    iframe.style.top = '45px';
+                }
+            }
+            
+            // Create iframe dynamically
+            const frameContainer = document.getElementById('simulation-frame-container');
+            const iframe = document.createElement('iframe');
+            iframe.id = 'simFrame';
+            iframe.allowFullscreen = true;
+            iframe.allow = 'fullscreen';
+            iframe.frameBorder = '0';
+            
+            // Apply styles that were previously in HTML
+            iframe.style.border = 'none';
+            iframe.style.margin = '0';
+            iframe.style.padding = '0';
+            iframe.style.position = 'absolute';
+            iframe.style.top = '45px';
+            iframe.style.left = '0';
+            iframe.style.width = '100%';
+            iframe.style.height = 'calc(100% + 9px)';
+            iframe.style.transform = 'translateY(0)';
+            iframe.style.overflow = 'hidden';
+            
+            // Disable right-click on iframe
+            document.addEventListener('contextmenu', function(e) {
+                if (e.target.tagName === 'IFRAME' || e.target.closest('#simulation-frame-container')) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+            
+            const loader = document.querySelector('.custom-loader');
+            const loadingDots = document.querySelector('.loading-dots');
+            const backButton = document.getElementById('backButton');
+            const progressBar = document.getElementById('loadingProgress');
+            
+            let iframeLoaded = false;
+            let loadingStartTime = Date.now();
+            
+            // Animate loading dots
+            let dotCount = 0;
+            const dotAnimation = setInterval(() => {
+                dotCount = (dotCount + 1) % 4;
+                loadingDots.textContent = '.'.repeat(dotCount);
+            }, 400);
+            
+            // Animate loading progress
+            let progress = 0;
+            const totalLoadTime = timings.initialDelay + timings.minLoadingTime + timings.styleInjectionDelay;
+            const progressInterval = setInterval(() => {
+                // Calculate what percentage of total expected load time has passed
+                const elapsedTime = Date.now() - loadingStartTime;
+                let calculatedProgress = Math.min(98, (elapsedTime / totalLoadTime) * 100);
+                
+                // If iframe is loaded, progress a bit faster but still slow
+                if (iframeLoaded && calculatedProgress < 70) {
+                    calculatedProgress = calculatedProgress * 0.8 + 70 * 0.2;
+                }
+                
+                // Slower progress bar movement
+                progress = progress * 0.9 + calculatedProgress * 0.1;
+                progressBar.style.width = progress + '%';
+                
+                // When loader is hidden, reach 100%
+                if (loader.classList.contains('hidden')) {
+                    progressBar.style.width = '100%';
+                    clearInterval(progressInterval);
+                }
+            }, 100);
+            
+            // Load the iframe after a delay to ensure our loading screen is visible first
+            setTimeout(() => {
+                const encodedUrl = part1 + part2 + part3;
+                iframe.src = deobfuscateURL(encodedUrl);
+                frameContainer.appendChild(iframe);
+                
+                iframe.onload = function() {
+                    iframeLoaded = true;
+                    
+                    // Much longer minimum loading time
+                    const loadingTime = Date.now() - loadingStartTime;
+                    const additionalDelay = Math.max(0, timings.minLoadingTime - loadingTime);
+                    
+                    setTimeout(() => {
+                        try {
+                            injectStyles();
+                            
+                            // Adjust iframe position for mobile
+                            adjustIframePositionForMobile();
+                            
+                            // Wait longer delay after styles are injected to ensure original loading is gone
+                            setTimeout(() => {
+                                loader.classList.add('hidden');
+                                console.log('Loading screen hidden. Device: ' + (isMobile ? 'mobile' : 'desktop'));
+                            }, timings.styleInjectionDelay);
+                        } catch (e) {
+                            console.error('Error injecting styles:', e);
+                            // Still hide loader even if error after the delay
+                            setTimeout(() => {
+                                loader.classList.add('hidden');
+                            }, timings.styleInjectionDelay);
+                        }
+                    }, additionalDelay);
+                };
+            }, timings.initialDelay);
+            
+            // Fallback timer in case iframe never loads or something goes wrong
+            setTimeout(() => {
+                clearInterval(dotAnimation);
+                clearInterval(progressInterval);
+                
+                // Always hide the loader after fallback time regardless of iframe load status
+                if (!loader.classList.contains('hidden')) {
+                    loader.classList.add('hidden');
+                    console.log('Fallback timer triggered to hide loading screen');
+                }
+                
+                // Stop pulsing the back button after 2 seconds
+                setTimeout(() => {
+                    if (backButton) backButton.classList.remove('pulse');
+                }, 2000);
+            }, timings.fallbackTimer);
+        };
+        
+        // Function to inject custom styles into the iframe
+        function injectStyles() {
+            const iframe = document.getElementById('simFrame');
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            
+            if (!iframeDoc) return;
+            
+            // Get our styles
+            const styles = document.querySelector('.sim-button-effects').innerHTML;
+            
+            // Create a new style element in the iframe
+            const styleElement = iframeDoc.createElement('style');
+            styleElement.type = 'text/css';
+            styleElement.innerHTML = styles;
+            iframeDoc.head.appendChild(styleElement);
+            
+            // Add mobile-specific styles for better touch interaction
+            if (isMobileDevice()) {
+                const mobileStyles = document.createElement('style');
+                mobileStyles.type = 'text/css';
+                mobileStyles.innerHTML = `
+                    /* Mobile optimizations for iframe content */
+                    button, input, select {
+                        min-height: 36px !important;
+                    }
+                    .slider {
+                        height: 36px !important;
+                    }
+                    /* Increase touch targets */
+                    .play-area svg {
+                        touch-action: manipulation !important;
+                    }
+                `;
+                iframeDoc.head.appendChild(mobileStyles);
+                
+                // Also adjust any mobile-specific elements
+                setTimeout(() => {
+                    try {
+                        const touchElements = iframeDoc.querySelectorAll('button, .slider, input[type="range"]');
+                        touchElements.forEach(el => {
+                            el.style.touchAction = 'manipulation';
+                        });
+                    } catch (e) {
+                        console.error('Error optimizing touch elements:', e);
+                    }
+                }, 1000);
+            }
+            
+            // Add hover event listeners to the buttons
+            setTimeout(() => {
+                try {
+                    // Try to find the simulation buttons
+                    const singleBulbButton = iframeDoc.querySelector('.home-screen-options > div:first-child');
+                    const rgbBulbsButton = iframeDoc.querySelector('.home-screen-options > div:last-child');
+                    
+                    if (singleBulbButton) {
+                        singleBulbButton.classList.add('single-bulb-sim-button');
+                        singleBulbButton.classList.add('sim-button-hover-active');
+                    }
+                    
+                    if (rgbBulbsButton) {
+                        rgbBulbsButton.classList.add('rgb-bulbs-button');
+                    }
+                    
+                    // Find and modify the title
+                    const homeScreenTitle = iframeDoc.querySelector('.home-screen-title');
+                    if (homeScreenTitle) {
+                        // Store the original text for the after pseudo-element
+                        homeScreenTitle.setAttribute('data-text', homeScreenTitle.textContent);
+                        // Make the title position relative for the glow effect
+                        homeScreenTitle.style.position = 'relative';
+                    }
+                    
+                    // Continue looking for the title if screen changes
+                    const observer = new MutationObserver((mutations) => {
+                        mutations.forEach((mutation) => {
+                            if (mutation.type === 'childList') {
+                                const title = iframeDoc.querySelector('.play-area-title');
+                                if (title && !title.hasAttribute('data-colored')) {
+                                    title.classList.add('home-screen-title');
+                                    title.setAttribute('data-text', title.textContent);
+                                    title.style.position = 'relative';
+                                    title.setAttribute('data-colored', 'true');
+                                }
+                            }
+                        });
+                    });
+                    
+                    observer.observe(iframeDoc.body, { 
+                        childList: true,
+                        subtree: true
+                    });
+                    
+                } catch (e) {
+                    console.error('Error adding button effects:', e);
+                }
+            }, 1500);
+        }
+
+        function goBack() {
+            const loader = document.querySelector('.custom-loader');
+            const loadingDots = document.querySelector('.loading-dots');
+            
+            // Show our loading screen first
+            loader.classList.remove('hidden');
+            loader.style.opacity = '1';
+            
+            // Animate loading dots
+            let dotCount = 0;
+            const dotAnimation = setInterval(() => {
+                dotCount = (dotCount + 1) % 4;
+                loadingDots.textContent = '.'.repeat(dotCount);
+            }, 400);
+            
+            // Small delay to ensure our loader shows first
+            setTimeout(() => {
+                clearInterval(dotAnimation);
+                window.location.href = 'welcome.html'; // Redirect to welcome.html
+            }, 1000);
+        }
+
+        let currentInfo = null;
+        function showInfo(type) {
+            const instructionsInfo = document.getElementById('instructionsInfo');
+            const devInfo = document.getElementById('devInfo');
+            const techInfo = document.getElementById('techInfo');
+            
+            instructionsInfo.classList.remove('show');
+            devInfo.classList.remove('show');
+            techInfo.classList.remove('show');
+            
+            if (currentInfo === type) {
+                currentInfo = null;
+                return;
+            }
+            
+            if (type === 'instructions') {
+                instructionsInfo.classList.add('show');
+            } else if (type === 'dev') {
+                devInfo.classList.add('show');
+            } else if (type === 'tech') {
+                techInfo.classList.add('show');
+            }
+            
+            currentInfo = type;
+        }
+
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.nav-button') && !event.target.closest('.info-popup')) {
+                document.querySelectorAll('.info-popup').forEach(popup => {
+                    popup.classList.remove('show');
+                });
+                currentInfo = null;
+            }
+        });
+    </script>
+</body>
+</html>
