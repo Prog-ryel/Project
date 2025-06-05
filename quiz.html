@@ -966,18 +966,22 @@ button:hover {
     box-shadow: 0 8px 24px rgba(67, 97, 238, 0.18);
   }
   @media (max-width: 700px) {
-    .info-buttons {
-      flex-direction: column;
-      gap: 0.7rem;
-      align-items: center;
-    }
-    .info-buttons button {
-      width: auto;         /* Changed from 80% to auto */
-    min-width: 140px;
-    max-width: 100%;
+   .info-buttons {
+    flex-direction: row;      /* Display buttons in a row on mobile */
+    gap: 0.5rem;
+    align-items: center;
     justify-content: center;
-    margin: 0 auto;
-    }
+    flex-wrap: wrap;
+  }
+  .info-buttons button {
+    width: auto;
+    min-width: 90px;
+    max-width: 120px;
+    font-size: 0.95rem;
+    padding: 0.6rem 0.7rem;
+    border-radius: 22px;
+    margin: 0;
+  }
   }
 </style>
   
