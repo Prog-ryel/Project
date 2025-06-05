@@ -929,6 +929,55 @@ button:hover {
       justify-content: flex-start;
     }
   }
+  .info-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .info-buttons button {
+    flex: 1 1 180px;
+    min-width: 140px;
+    max-width: 220px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    color: #fff;
+    border: none;
+    border-radius: 30px;
+    padding: 1rem 1.5rem;
+    font-size: 1.08rem;
+    font-weight: 600;
+    box-shadow: 0 4px 18px rgba(67, 97, 238, 0.13);
+    transition: background 0.3s, transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    outline: none;
+    cursor: pointer;
+    justify-content: center;
+  }
+  .info-buttons button i {
+    font-size: 1.2rem;
+    margin-right: 0.5rem;
+  }
+  .info-buttons button:hover, .info-buttons button:focus {
+    background: linear-gradient(90deg, var(--accent), var(--primary));
+    transform: translateY(-3px) scale(1.04);
+    box-shadow: 0 8px 24px rgba(67, 97, 238, 0.18);
+  }
+  @media (max-width: 700px) {
+    .info-buttons {
+      flex-direction: column;
+      gap: 0.7rem;
+      align-items: stretch;
+    }
+    .info-buttons button {
+      width: 100%;
+      min-width: unset;
+      max-width: unset;
+      justify-content: center;
+    }
+  }
 </style>
   
 </style>
@@ -950,7 +999,7 @@ button:hover {
         <h1>Welcome to Color Vision Simulator Quizzes</h1>
         <p>Challenge yourself with our carefully crafted questions</p>
 
-      <div style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 1.5rem;">
+      <div class="info-buttons">
         <button type="button" id="mechanics-btn"><i class="fas fa-cogs"></i> Game Mechanics</button>
         <button type="button" id="rules-btn"><i class="fas fa-book"></i> Rules</button>
         <button type="button" id="show-highscore-btn"><i class="fas fa-trophy"></i> High Score</button>
