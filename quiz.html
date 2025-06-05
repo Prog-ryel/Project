@@ -967,7 +967,7 @@ button:hover {
   }
   @media (max-width: 700px) {
    .info-buttons {
-    flex-direction: row;      /* Display buttons in a row on mobile */
+    flex-direction: row;
     gap: 0.5rem;
     align-items: center;
     justify-content: center;
@@ -978,7 +978,7 @@ button:hover {
     min-width: 90px;
     max-width: 120px;
     font-size: 0.95rem;
-    padding: 0.6rem 0.7rem;
+    padding: 0.6rem 0.7rem !important; /* Ensure all buttons have the same padding */
     border-radius: 22px;
     margin: 0;
   }
